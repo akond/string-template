@@ -1,6 +1,7 @@
-(defproject com.github.akond/string-template "0.0.1-SNAPSHOT"
+(defproject com.github.akond/string-template "0.0.2"
 
 	:description "A Clojure wrapper around StringTemplate"
+	:url "https://github.com/akond/string-template"
 
 	:dependencies [[org.clojure/clojure "1.11.1"]
 				   [org.antlr/stringtemplate "4.0.2"]]

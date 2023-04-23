@@ -1,4 +1,4 @@
-(ns string-template.core
+(ns com.github.akond.string-template.core
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
 		(java.io File)
