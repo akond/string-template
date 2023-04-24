@@ -2,7 +2,6 @@
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
 		(java.io File)
-		(java.security InvalidKeyException)
 		(org.stringtemplate.v4 ST STGroupFile STGroupString)))
 
 ; os described at https://github.com/antlr/stringtemplate4/blob/master/doc/cheatsheet.md
@@ -38,10 +37,15 @@
 
 	Associative
 	(assoc [this k v]
-		(let [k (stringify k)]
+		(let [k      (stringify k)
+			  adjust (some-fn
+						 (fn [v]
+							 (when (and (map? v) (not (instance? StringTemplate v)))
+								 (update-keys v stringify)))
+						 identity)]
 			(when (contains? reserved k)
-				(throw (InvalidKeyException. (format "'%s' is a reserved name." k))))
-			(.add template k (if (map? v) (clojure.walk/stringify-keys v) v)))
+				(throw (IllegalArgumentException. (format "'%s' is a reserved name." k))))
+			(.add template k (adjust v)))
 		this))
 
 (defmulti template class)

@@ -1,6 +1,7 @@
-(defproject com.github.akond/string-template "0.0.2"
+(defproject com.github.akond/string-template "0.0.3"
 
 	:description "A Clojure wrapper around StringTemplate"
+
 	:url "https://github.com/akond/string-template"
 
 	:dependencies [[org.clojure/clojure "1.11.1"]
@@ -12,4 +13,4 @@
 
 	:repositories {"clojars" {:url "https://clojars.org/repo"}}
 
-	:repl-options {:init-ns string-template.core})
+	:repl-options {:init-ns com.github.akond.string-template.core})
