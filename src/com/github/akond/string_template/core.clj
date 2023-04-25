@@ -4,6 +4,9 @@
 		(java.io File)
 		(org.stringtemplate.v4 ST STGroupFile STGroupString)))
 
+; https://www.stringtemplate.org/
+; https://github.com/antlr/stringtemplate4/blob/master/doc/index.md
+
 ; os described at https://github.com/antlr/stringtemplate4/blob/master/doc/cheatsheet.md
 (def reserved (->>
 				  '(true, false, import, default, key, group, implements, first, last, rest, trunc, strip, trim, length,
@@ -15,24 +18,35 @@
 	(cond-> k
 		(or (keyword? k) (symbol? k)) name))
 
-(deftype StringTemplate [template]
+(defprotocol IRaw
+	(raw [this]))
+
+(deftype StringTemplate [string-template]
+	IRaw
+	(raw [this]
+		string-template)
+
 	Object
 	(toString [_]
-		(.render template))
+		(.render string-template))
 
 	IPersistentCollection
 	(cons [this a]
 		(reduce (partial apply assoc) this a)
 		this)
 
+	(seq [this]
+		())
+
 	(empty [this]
-		(doseq [k (keys (.getAttributes template))]
-			(.remove template k))
+		(doseq [k (keys (.getAttributes string-template))]
+			(.remove string-template k))
 		this)
+
 
 	IPersistentMap
 	(without [this k]
-		(.remove template (stringify k))
+		(.remove string-template (stringify k))
 		this)
 
 	Associative
@@ -40,12 +54,15 @@
 		(let [k      (stringify k)
 			  adjust (some-fn
 						 (fn [v]
+							 (when (instance? StringTemplate v)
+								 (.string_template v)))
+						 (fn [v]
 							 (when (and (map? v) (not (instance? StringTemplate v)))
 								 (update-keys v stringify)))
 						 identity)]
 			(when (contains? reserved k)
 				(throw (IllegalArgumentException. (format "'%s' is a reserved name." k))))
-			(.add template k (adjust v)))
+			(.add string-template k (clojure.walk/postwalk adjust v)))
 		this))
 
 (defmulti template class)
@@ -62,14 +79,17 @@
 (defmethod print-method StringTemplate [t w]
 	(->> t str (.write w)))
 
-(deftype StringTemplateGroup [g]
+(deftype StringTemplateGroup [template-group]
+	IRaw
+	(raw [_]
+		template-group)
 	ILookup
 	(valAt [this k]
-		(template (.getInstanceOf g (stringify k))))
+		(template (.getInstanceOf template-group (stringify k))))
 	(valAt [this k none]
 		(let [k' (stringify k)]
-			(if (.isDefined g k')
-				(template (.getInstanceOf g k'))
+			(if (.isDefined template-group k')
+				(template (.getInstanceOf template-group k'))
 				none))))
 
 (defmulti group class)
