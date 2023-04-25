@@ -1,10 +1,10 @@
-(defproject com.github.akond/string-template "0.0.6"
+(defproject com.github.akond/string-template "0.0.7"
 
 	:description "A Clojure wrapper around StringTemplate"
 
 	:url "https://github.com/akond/string-template"
 
-	:dependencies [[org.antlr/stringtemplate "4.0.2"]]
+	:dependencies [[org.antlr/ST4 "4.3.4"]]
 
 	:license {:name         "Apache License, Version 2.0"
 			  :url          "https://www.apache.org/licenses/LICENSE-2.0"
