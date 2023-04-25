@@ -15,8 +15,9 @@
 				  (into #{})))
 
 (defn stringify [k]
-	(cond-> k
-		(or (keyword? k) (symbol? k)) name))
+	(munge
+		(cond-> k
+			(or (keyword? k) (symbol? k)) name)))
 
 (defprotocol IRaw
 	(raw [this]))

@@ -7,9 +7,10 @@
 
 (deftest Creation
 	(is (= "AB" (-> (st/template "A<x>") (assoc :x "B") (str))))
-	(is (= "ADEF" (-> (st/template "A<x><y>")
+	(is (= "ADEF:" (-> (st/template "A<x><y><iso_date>")
 					  (merge {:x "D"
-							  :y (st/template "EF")})
+							  :y (st/template "EF")
+							  :iso-date ":"})
 					  str)))
 
 	(testing "Anonymous template"
