@@ -74,6 +74,9 @@
 (defmethod template ST [s]
 	(->StringTemplate s))
 
+(defmethod template com.github.akond.string_template.core.StringTemplate [s]
+	s)
+
 (defmethod template File [s]
 	(->StringTemplate (ST. (slurp s))))
 
@@ -101,3 +104,8 @@
 (defmethod group File [s]
 	(let [path (str (.getAbsoluteFile s))]
 		(->StringTemplateGroup (STGroupFile. path))))
+
+(defn with-group [s g]
+	(let [s (template s)]
+		(set! (. (raw s) groupThatCreatedThisInstance) (raw g))
+		s))

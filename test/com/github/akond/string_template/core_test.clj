@@ -8,10 +8,10 @@
 (deftest Creation
 	(is (= "AB" (-> (st/template "A<x>") (assoc :x "B") (str))))
 	(is (= "ADEF:" (-> (st/template "A<x><y><iso_date>")
-					  (merge {:x "D"
-							  :y (st/template "EF")
-							  :iso-date ":"})
-					  str)))
+					   (merge {:x        "D"
+							   :y        (st/template "EF")
+							   :iso-date ":"})
+					   str)))
 
 	(testing "Anonymous template"
 		(is (= "A1-211-22" (-> (st/template "A<list:{attr | <attr.x>-<attr.y>}>")
@@ -33,4 +33,9 @@
 				t7(x) ::= \"T7\"")]
 			(is (= "T6T7T6." (-> (get g :t5)
 								 (merge {:list [1 2 3]})
-								 str))))))
+								 str)))))
+
+	(testing "External group"
+		(let [g (st/group "t8(list) ::= <<+<list; separator=\",\">!>>")
+			  t (st/with-group "S<t8(a)>" g)]
+			(is (= "S+1,2,3!" (-> t (merge {:a [1 2 3]}) (str)))))))
