@@ -16,7 +16,13 @@
 	(testing "Anonymous template"
 		(is (= "A1-211-22" (-> (st/template "A<list:{attr | <attr.x>-<attr.y>}>")
 							   (merge {:list [{:x 1 :y 2} {:x 11 :y 22}]})
-							   str)))))
+							   str))))
+
+	(testing "Renderers"
+		(is (= "cat......." (-> (st/group "string(s) ::= <<<s; format=\"~10,1,0,'.A\">\n>>" :renderers [[String st/cl-renderer]])
+								:string
+								(merge {:s "cat"})
+								str)))))
 
 (deftest Groups
 	(testing "Template reference"

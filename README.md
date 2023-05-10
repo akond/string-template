@@ -41,5 +41,7 @@ world(item) ::= <<
 >>
 ```
 ## TODO
+
+## Done
 * Renderer support
 * Ready-made renderers (common lisp)

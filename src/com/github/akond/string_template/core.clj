@@ -1,8 +1,10 @@
 (ns com.github.akond.string-template.core
+	(:require
+		[clojure.pprint :refer [cl-format]])
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
 		(java.io File StringWriter)
-		(org.stringtemplate.v4 AutoIndentWriter ST STGroupFile STGroupString)
+		(org.stringtemplate.v4 AttributeRenderer AutoIndentWriter ST STGroupFile STGroupString)
 		(org.stringtemplate.v4.misc ErrorBuffer)))
 
 ; https://www.stringtemplate.org/
@@ -103,16 +105,33 @@
 				(template (.getInstanceOf template-group k'))
 				none))))
 
-(defmulti group class)
+(defn instrument-group [g opts]
+	(let [{:keys [renderers]} opts]
+		(when-let [renderers (seq renderers)]
+			(doseq [[type renderer] renderers]
+				(-> g raw (.registerRenderer type
+							  (reify AttributeRenderer
+								  (toString [_ val format locale]
+									  (renderer val format locale)))))))))
+
+(defmulti group (fn [o & _] (class o)))
 
 (defmethod group :default [s]
-	(->StringTemplateGroup (STGroupString. s)))
+	(throw (IllegalArgumentException. (format "Type %s is unexpected." (-> s class .getName)))))
 
-(defmethod group File [s]
+(defmethod group String [s & opts]
+	(doto (->StringTemplateGroup (STGroupString. s))
+		(instrument-group opts)))
+
+(defmethod group File [s & opts]
 	(let [path (str (.getAbsoluteFile s))]
-		(->StringTemplateGroup (STGroupFile. path))))
+		(doto (->StringTemplateGroup (STGroupFile. path))
+			(instrument-group opts))))
 
 (defn with-group [s g]
 	(let [s (template s)]
 		(set! (. (raw s) groupThatCreatedThisInstance) (raw g))
 		s))
+
+(defn cl-renderer [val format locale]
+	(cl-format nil format val))
