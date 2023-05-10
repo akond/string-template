@@ -39,3 +39,6 @@
 		(let [g (st/group "t8(list) ::= <<+<list; separator=\",\">!>>")
 			  t (st/with-group "S<t8(a)>" g)]
 			(is (= "S+1,2,3!" (-> t (merge {:a [1 2 3]}) (str)))))))
+
+(deftest ErrorCases
+	(is (thrown? Throwable (str (st/template "<missing>")))))

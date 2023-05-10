@@ -1,8 +1,9 @@
 (ns com.github.akond.string-template.core
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
-		(java.io File)
-		(org.stringtemplate.v4 ST STGroupFile STGroupString)))
+		(java.io File StringWriter)
+		(org.stringtemplate.v4 AutoIndentWriter ST STGroupFile STGroupString)
+		(org.stringtemplate.v4.misc ErrorBuffer)))
 
 ; https://www.stringtemplate.org/
 ; https://github.com/antlr/stringtemplate4/blob/master/doc/index.md
@@ -29,7 +30,13 @@
 
 	Object
 	(toString [_]
-		(.render string-template))
+		(let [wr (StringWriter.)
+			  eb (ErrorBuffer.)]
+			(.write string-template (AutoIndentWriter. wr) eb)
+			(when-let [errors (seq (.-errors eb))]
+				(throw (Exception. (.toString (first errors)))))
+
+			(str wr)))
 
 	IPersistentCollection
 	(cons [this a]
