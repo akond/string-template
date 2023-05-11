@@ -1,7 +1,9 @@
 (ns com.github.akond.string-template.core-test
 	(:require
 		[clojure.test :refer :all]
-		[com.github.akond.string-template.core :as st]))
+		[com.github.akond.string-template.core :as st])
+	(:import
+		(java.util Locale)))
 
 ; https://github.com/antlr/stringtemplate4/blob/master/doc/index.md
 
@@ -22,7 +24,16 @@
 		(is (= "cat......." (-> (st/group "string(s) ::= <<<s; format=\"~10,1,0,'.A\">\n>>" :renderers [[String st/cl-renderer]])
 								:string
 								(merge {:s "cat"})
-								str)))))
+								str)))
+		(is (= "dog" (-> (st/group "string(s) ::= <<<s>\n>>" :renderers [st/cl-renderer])
+						 :string
+						 (merge {:s "dog"})
+						 str)))
+		(let [gr (-> (st/group "number(n) ::= <<<n; format=\"%+10.4f\">!>>" :renderers [st/java-renderer])
+					 :number
+					 (merge {:n Math/E}))]
+			(is (= "   +2.7183!" (-> gr (st/render))))
+			(is (= "   +2,7183!" (-> gr (st/render Locale/FRANCE)))))))
 
 (deftest Groups
 	(testing "Template reference"

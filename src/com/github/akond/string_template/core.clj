@@ -21,24 +21,32 @@
 	(munge
 		(cond-> k
 			(or (keyword? k) (symbol? k)) name)))
-
 (defprotocol IRaw
 	(raw [this]))
+
+(defprotocol IStringTemplate
+	(render [this] [this locale]))
 
 (deftype StringTemplate [string-template]
 	IRaw
 	(raw [this]
 		string-template)
 
-	Object
-	(toString [_]
+	IStringTemplate
+	(render [this] (render this nil))
+	(render [_ locale]
 		(let [wr (StringWriter.)
 			  eb (ErrorBuffer.)]
-			(.write string-template (AutoIndentWriter. wr) eb)
+			(if locale
+				(.write string-template (AutoIndentWriter. wr) locale eb)
+				(.write string-template (AutoIndentWriter. wr) eb))
 			(when-let [errors (seq (.-errors eb))]
 				(throw (Exception. (.toString (first errors)))))
-
 			(str wr)))
+
+	Object
+	(toString [this]
+		(render this))
 
 	IPersistentCollection
 	(cons [this a]
@@ -75,7 +83,7 @@
 			(.add string-template k (clojure.walk/postwalk adjust v)))
 		this))
 
-(defmulti template class)
+(defmulti template (fn [o & _] (class o)))
 
 (defmethod template :default [s]
 	(->StringTemplate (ST. s)))
@@ -105,14 +113,22 @@
 				(template (.getInstanceOf template-group k'))
 				none))))
 
+(defn create-renderer [f]
+	(reify AttributeRenderer
+		(toString [_ val format locale]
+			(if format
+				(f val format locale)
+				val))))
+
 (defn instrument-group [g opts]
 	(let [{:keys [renderers]} opts]
-		(when-let [renderers (seq renderers)]
-			(doseq [[type renderer] renderers]
-				(-> g raw (.registerRenderer type
-							  (reify AttributeRenderer
-								  (toString [_ val format locale]
-									  (renderer val format locale)))))))))
+		(doseq [renderer (seq renderers)
+				:let [[type renderer] (if (fn? renderer)
+										  [Object renderer]
+										  renderer)]]
+			(-> g (.registerRenderer type
+					  (create-renderer renderer))))
+		(->StringTemplateGroup g)))
 
 (defmulti group (fn [o & _] (class o)))
 
@@ -120,18 +136,19 @@
 	(throw (IllegalArgumentException. (format "Type %s is unexpected." (-> s class .getName)))))
 
 (defmethod group String [s & opts]
-	(doto (->StringTemplateGroup (STGroupString. s))
-		(instrument-group opts)))
+	(instrument-group (STGroupString. s) opts))
 
 (defmethod group File [s & opts]
 	(let [path (str (.getAbsoluteFile s))]
-		(doto (->StringTemplateGroup (STGroupFile. path))
-			(instrument-group opts))))
+		(instrument-group (STGroupFile. path) opts)))
 
 (defn with-group [s g]
 	(let [s (template s)]
 		(set! (. (raw s) groupThatCreatedThisInstance) (raw g))
 		s))
 
-(defn cl-renderer [val format locale]
-	(cl-format nil format val))
+(defn cl-renderer [val fmt locale]
+	(cl-format nil fmt val))
+
+(defn java-renderer [val fmt locale]
+	(String/format locale fmt (to-array [val])))

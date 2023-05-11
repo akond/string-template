@@ -5,13 +5,19 @@ A Clojure wrapper around StringTemplate.
 This is a Proof of concept. Do not use in production.
 
 # Rationale
+
 * A paper "Enforcing Strict Model-View Separation in Template Engines" by Terence Parr.
+* Cover the monstrosity of Java with joy and loveliness of Clojure
+* Labor est etiam ipse voluptas
 
 # Resources
+
 * [Template Syntax cheet sheet](https://github.com/antlr/stringtemplate4/blob/master/doc/cheatsheet.md)
 
 # Examples
+
 ## Hello, world
+
 ```clojure
 (require '[com.github.akond.string-template.core :as st])
 (let [t (st/template "Hello, <name>!")]
@@ -20,6 +26,7 @@ This is a Proof of concept. Do not use in production.
 ```
 
 ## Using template groups
+
 ```clojure
 (let [g (st/group (io/file "example.stg"))]
 	(-> g :greet (merge {:hellos ["Hi" "Guten morgen" "Buenos dias"]}) print))
@@ -30,6 +37,7 @@ Buenos dias, world!
 ```
 
 File `example.stg`:
+
 ```
 greet(hellos) ::= <<
 <hellos: world()>
@@ -40,8 +48,13 @@ world(item) ::= <<
 
 >>
 ```
+
+See more examples in the tests.
+
 ## TODO
 
 ## Done
+
 * Renderer support
 * Ready-made renderers (common lisp)
+* Locale support
