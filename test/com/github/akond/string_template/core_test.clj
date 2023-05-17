@@ -8,12 +8,13 @@
 ; https://github.com/antlr/stringtemplate4/blob/master/doc/index.md
 
 (deftest Creation
-	(is (= "AB" (-> (st/template "A<x>") (assoc :x "B") (str))))
-	(is (= "ADEF:" (-> (st/template "A<x><y><iso_date>")
-					   (merge {:x        "D"
-							   :y        (st/template "EF")
-							   :iso-date ":"})
-					   str)))
+	(testing "Simple things"
+		(is (= "AB" (-> (st/template "A<x>") (assoc :x "B") (str))))
+		(is (= "ADEF:" (-> (st/template "A<x><y><iso_date>")
+						   (merge {:x        "D"
+								   :y        (st/template "EF")
+								   :iso-date ":"})
+						   str))))
 
 	(testing "Anonymous template"
 		(is (= "A1-211-22" (-> (st/template "A<list:{attr | <attr.x>-<attr.y>}>")
@@ -33,7 +34,12 @@
 					 :number
 					 (merge {:n Math/E}))]
 			(is (= "   +2.7183!" (-> gr (st/render))))
-			(is (= "   +2,7183!" (-> gr (st/render Locale/FRANCE)))))))
+			(is (= "   +2,7183!" (-> gr (st/render {:locale Locale/FRANCE}))))))
+
+	(testing "Fixed width output"
+		(let [string (repeat 4 "cat")
+			  t      (-> (st/template "<s; wrap, separator=\" \">.") (merge {:s string}))]
+			(is (= "cat cat cat \ncat." (st/render t {:line-width 10}))))))
 
 (deftest Groups
 	(testing "Template reference"

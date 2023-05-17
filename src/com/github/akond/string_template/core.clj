@@ -4,7 +4,8 @@
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
 		(java.io File StringWriter)
-		(org.stringtemplate.v4 AttributeRenderer AutoIndentWriter ST STGroupFile STGroupString)
+		(java.util Locale)
+		(org.stringtemplate.v4 AttributeRenderer AutoIndentWriter ST STGroupFile STGroupString STWriter)
 		(org.stringtemplate.v4.misc ErrorBuffer)))
 
 ; https://www.stringtemplate.org/
@@ -25,24 +26,27 @@
 	(raw [this]))
 
 (defprotocol IStringTemplate
-	(render [this] [this locale]))
+	(render [this] [this opts]))
 
-(deftype StringTemplate [string-template]
+(deftype StringTemplate [^ST string-template]
 	IRaw
 	(raw [this]
 		string-template)
 
 	IStringTemplate
 	(render [this] (render this nil))
-	(render [_ locale]
-		(let [wr (StringWriter.)
-			  eb (ErrorBuffer.)]
-			(if locale
-				(.write string-template (AutoIndentWriter. wr) locale eb)
-				(.write string-template (AutoIndentWriter. wr) eb))
-			(when-let [errors (seq (.-errors eb))]
+	(render [_ {:keys [line-width locale]
+				:or   {line-width STWriter/NO_WRAP
+					   locale     (Locale/getDefault)}}]
+		(let [string-writer      (StringWriter.)
+			  error-buffer       (ErrorBuffer.)
+			  auto-indent-writer (doto (AutoIndentWriter. string-writer)
+									 (.setLineWidth line-width))]
+			(.write string-template auto-indent-writer locale error-buffer)
+			(when-let [errors (seq (.-errors error-buffer))]
 				(throw (Exception. (.toString (first errors)))))
-			(str wr)))
+
+			(str string-writer)))
 
 	Object
 	(toString [this]

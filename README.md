@@ -50,11 +50,3 @@ world(item) ::= <<
 ```
 
 See more examples in the tests.
-
-## TODO
-
-## Done
-
-* Renderer support
-* Ready-made renderers (common lisp)
-* Locale support
