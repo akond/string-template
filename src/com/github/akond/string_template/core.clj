@@ -122,7 +122,7 @@
 		(toString [_ val format locale]
 			(if format
 				(f val format locale)
-				val))))
+				(str val)))))
 
 (defn instrument-group [g opts]
 	(let [{:keys [renderers]} opts]
