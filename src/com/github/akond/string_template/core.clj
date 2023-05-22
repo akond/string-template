@@ -3,10 +3,10 @@
 		[clojure.pprint :refer [cl-format]])
 	(:import
 		(clojure.lang Associative ILookup IPersistentCollection IPersistentMap)
-		(java.io File StringWriter)
+		(java.io File StringWriter Writer)
 		(java.util Locale)
-		(org.stringtemplate.v4 AttributeRenderer AutoIndentWriter ST STGroupFile STGroupString STWriter)
-		(org.stringtemplate.v4.misc ErrorBuffer)))
+		(org.stringtemplate.v4 AttributeRenderer AutoIndentWriter ST STGroup STGroupFile STGroupString STWriter)
+		(org.stringtemplate.v4.misc ErrorBuffer STMessage)))
 
 ; https://www.stringtemplate.org/
 ; https://github.com/antlr/stringtemplate4/blob/master/doc/index.md
@@ -35,16 +35,16 @@
 
 	IStringTemplate
 	(render [this] (render this nil))
-	(render [_ {:keys [line-width locale]
-				:or   {line-width STWriter/NO_WRAP
-					   locale     (Locale/getDefault)}}]
-		(let [string-writer      (StringWriter.)
-			  error-buffer       (ErrorBuffer.)
-			  auto-indent-writer (doto (AutoIndentWriter. string-writer)
-									 (.setLineWidth line-width))]
+	(render [_ {:keys [^Long line-width ^Locale locale]
+				:or   {^Long line-width STWriter/NO_WRAP
+					   ^Locale locale   (Locale/getDefault)}}]
+		(let [^StringWriter string-writer (StringWriter.)
+			  ^ErrorBuffer error-buffer   (ErrorBuffer.)
+			  auto-indent-writer          (doto (AutoIndentWriter. string-writer)
+											  (.setLineWidth line-width))]
 			(.write string-template auto-indent-writer locale error-buffer)
 			(when-let [errors (seq (.-errors error-buffer))]
-				(throw (Exception. (.toString (first errors)))))
+				(throw (Exception. ^String (.toString ^STMessage (first errors)))))
 
 			(str string-writer)))
 
@@ -77,7 +77,7 @@
 			  adjust (some-fn
 						 (fn [v]
 							 (when (instance? StringTemplate v)
-								 (.string_template v)))
+								 (.string_template ^StringTemplate v)))
 						 (fn [v]
 							 (when (and (map? v) (not (instance? StringTemplate v)))
 								 (update-keys v stringify)))
@@ -89,22 +89,22 @@
 
 (defmulti template (fn [o & _] (class o)))
 
-(defmethod template :default [s]
+(defmethod template :default [^String s]
 	(->StringTemplate (ST. s)))
 
-(defmethod template ST [s]
+(defmethod template ST [^ST s]
 	(->StringTemplate s))
 
 (defmethod template com.github.akond.string_template.core.StringTemplate [s]
 	s)
 
-(defmethod template File [s]
+(defmethod template File [^File s]
 	(->StringTemplate (ST. (slurp s))))
 
-(defmethod print-method StringTemplate [t w]
+(defmethod print-method StringTemplate [t ^Writer w]
 	(->> t str (.write w)))
 
-(deftype StringTemplateGroup [template-group]
+(deftype StringTemplateGroup [^STGroup template-group]
 	IRaw
 	(raw [_]
 		template-group)
@@ -117,20 +117,20 @@
 				(template (.getInstanceOf template-group k'))
 				none))))
 
-(defn create-renderer [f]
+(defn ^AttributeRenderer create-renderer [f]
 	(reify AttributeRenderer
 		(toString [_ val format locale]
 			(if format
 				(f val format locale)
 				(str val)))))
 
-(defn instrument-group [g opts]
+(defn instrument-group [^STGroup g opts]
 	(let [{:keys [renderers]} opts
 		  renderers (if (fn? renderers) [[Object renderers]] renderers)]
 		(doseq [renderer (seq renderers)
-				:let [[type renderer] (if (fn? renderer)
-										  [Object renderer]
-										  renderer)]]
+				:let [[^Class type renderer] (if (fn? renderer)
+												 [Object renderer]
+												 renderer)]]
 			(-> g (.registerRenderer type
 					  (create-renderer renderer))))
 
@@ -144,13 +144,13 @@
 (defmethod group String [s & opts]
 	(instrument-group (STGroupString. s) opts))
 
-(defmethod group File [s & opts]
+(defmethod group File [^File s & opts]
 	(let [path (str (.getAbsoluteFile s))]
 		(instrument-group (STGroupFile. path) opts)))
 
 (defn with-group [s g]
 	(let [s (template s)]
-		(set! (. (raw s) groupThatCreatedThisInstance) (raw g))
+		(set! (. ^ST (raw s) groupThatCreatedThisInstance) (raw g))
 		s))
 
 (defn cl-renderer [val fmt locale]
