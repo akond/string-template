@@ -125,13 +125,15 @@
 				(str val)))))
 
 (defn instrument-group [g opts]
-	(let [{:keys [renderers]} opts]
+	(let [{:keys [renderers]} opts
+		  renderers (if (fn? renderers) [[Object renderers]] renderers)]
 		(doseq [renderer (seq renderers)
 				:let [[type renderer] (if (fn? renderer)
 										  [Object renderer]
 										  renderer)]]
 			(-> g (.registerRenderer type
 					  (create-renderer renderer))))
+
 		(->StringTemplateGroup g)))
 
 (defmulti group (fn [o & _] (class o)))

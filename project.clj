@@ -1,4 +1,4 @@
-(defproject com.github.akond/string-template "0.0.13"
+(defproject com.github.akond/string-template "0.0.14"
 
 	:description "A Clojure wrapper around StringTemplate"
 
