@@ -2,7 +2,7 @@
 
 A Clojure wrapper around StringTemplate.
 
-This is a Proof of concept. Do not use in production.
+This is a Proof of concept.
 
 # Rationale
 
